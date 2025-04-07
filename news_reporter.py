@@ -1,18 +1,6 @@
 import os
-import pickle
-# Gmail API utils
-from googleapiclient.discovery import build
-from google_auth_oauthlib.flow import InstalledAppFlow
-from google.auth.transport.requests import Request
+
 # for encoding/decoding messages in base64
-from base64 import urlsafe_b64decode, urlsafe_b64encode
-# for dealing with attachment MIME types
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from email.mime.image import MIMEImage
-from email.mime.audio import MIMEAudio
-from email.mime.base import MIMEBase
-from mimetypes import guess_type as guess_mime_type
 
 from google import genai
 from google.genai.types import Tool, GenerateContentConfig, GoogleSearch
@@ -23,6 +11,8 @@ import re
 from jinja2 import Environment, BaseLoader
 import html
 from dotenv import load_dotenv
+
+from gmail_service import gmail_authenticate,send_email,email_subject
 load_dotenv()
 
 
@@ -35,7 +25,37 @@ client = genai.Client(api_key = api_key)
 gemini_2_5_pro = "gemini-2.5-pro-exp-03-25"
 gemini_2_0_flash = "gemini-2.0-flash"
 
+NEWS_GENERATION_PROMPT = """
+You are a highly experienced news editor AI. Your task is to compile a concise and informative news digest covering the most significant global events from the last 12-24 hours.
 
+Use the Google Search tool to find RECENT and RELEVANT news articles for the following categories:
+1.  Major Headlines: Top 3-5 most impactful global stories.
+2.  Key Developments in International Affairs: Significant diplomatic or political shifts (Top 3-5 stories).
+3.  Conflict: Updates on major ongoing conflicts (Top 3-5 stories).
+4.  The Global Economy: Important economic news, market trends, policy changes (Top 3-5 stories).
+5.  Business and Industry: Major corporate news, sector trends (Top 3-5 stories).
+6.  In Canada: Key national news specific to Canada (Top 3-5 stories).
+7.  Science and Technology: Breakthroughs, major developments (Top 3-5 stories).
+8.  Socio-cultural Developments: Significant societal or cultural trends/events (Top 3-5 stories).
+9.  Human Interest Stories: Compelling stories about individuals or communities (Top 2-3 stories).
+10. AI Spotlight: Notable advancements or news in Artificial Intelligence (Top 2-3 stories).
+
+For EACH article you include, provide:
+- A concise, informative headline (max 15 words).
+- A brief summary (around 40-60 words).
+- The name of the news provider (e.g., "Reuters", "BBC News", "The Associated Press").
+- A direct, working URL (sourceLink) to the original article.
+
+CRITICAL INSTRUCTIONS:
+- Focus on the MOST RECENT news (within the last 24 hours preferably).
+- Ensure all source links (sourceLink) are valid URLs.
+- Do NOT duplicate stories across categories. If a story fits multiple, choose the most relevant one.
+- Adhere STRICTLY to the requested JSON output format defined by the schema.
+- Do NOT include any introductory text, explanations, or concluding remarks outside the JSON structure.
+- If you cannot find sufficient RECENT news for a category, you may return an empty list for that category, but try your best.
+"""
+
+# HTML template for the news digest
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="en">
@@ -337,28 +357,7 @@ def generate_news(model=gemini_2_5_pro):
 
     response = client.models.generate_content(
                                                 model=model,
-                                                contents=
-                                                """You are a news reporter with over 20 years of experience tracking,
-                                                    summarizing and analyzing global news stories. Using the web search tool, Search the web for the latest and
-                                                    top global news stories today in the following categories:
-                                                    
-
-                                                        1. A brief overview of the major headlines
-                                                        2. Key developments in international affairs
-                                                        3. Conflict
-                                                        4. The Global Economy
-                                                        5. Business and Industry
-                                                        6. In Canada
-                                                        7. Science and Technology
-                                                        8. Socio-cultural Developments
-                                                        9. Human Interest Stories
-                                                        10. AI Spotlight.
-
-                                                    Narrow down to the top 5 stories for each category and provide a 10 word headline, followed by a 50 word 
-                                                    summary for each news article in the format  'headline': 'summary'.
-                                                    Also include a direct link to the source for each article. 
-                                                    You must always return valid JSON fenced by a markdown code block. Do not return any additional text.
-                                                    """ ,
+                                                contents=NEWS_GENERATION_PROMPT,
                                                     config = GenerateContentConfig(tools = [google_search_tool])
                                                     )
     return response.text
@@ -396,81 +395,19 @@ def generate_html(news_data: NewsCollection) -> str:
 
     return html_output
 
-# Request all access (permission to read/send/receive emails, manage the inbox, and more)
-SCOPES = ['https://mail.google.com/']
-our_email = 'mumunisigli@gmail.com'
-
-def gmail_authenticate():
-    creds = None
-    # the file token.pickle stores the user's access and refresh tokens, and is
-    # created automatically when the authorization flow completes for the first time
-    if os.path.exists("token.pickle"):
-        with open("token.pickle", "rb") as token:
-            creds = pickle.load(token)
-    # if there are no (valid) credentials availablle, let the user log in.
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
-            creds = flow.run_local_server(port=0)
-        # save the credentials for the next run
-        with open("token.pickle", "wb") as token:
-            pickle.dump(creds, token)
-    return build('gmail', 'v1', credentials=creds)
 
 # get the Gmail API service
 service = gmail_authenticate()
 
 
-def briefing_time():
-    hour = datetime.now(tz=timezone('US/Eastern')).hour
-    if hour <12:
-        return "Morning News Briefing"
-    elif hour <=15:
-        return "Afternoon News Briefing"
-    elif hour <=20:
-        return "Evening News Briefing"
-    elif hour <=23:
-        return "Nightly News Briefing"
-    else:
-        return "News Briefing"
 
-def create_message(sender, destination, obj, message_text, html_message=None):
-    
-    #message = MIMEText(body)
-    #message['to'] = destination
-    #message['from'] = our_email
-    #message['subject'] = obj
-    #return {'raw': urlsafe_b64encode(message.as_bytes()).decode()}
-
-    message = MIMEMultipart('alternative') # Use 'alternative' to show either text or HTML
-    message['to'] = destination
-    message['from'] = sender
-    message['subject'] = obj
-
-    msg = MIMEText(message_text, 'plain')
-    message.attach(msg)
-
-    if html_message:
-        msg = MIMEText(html_message, 'html')
-        message.attach(msg)
-
-    return {'raw': urlsafe_b64encode(message.as_bytes()).decode()}
-
-def send_message(service, sender,destination, obj, body,html):
-    return service.users().messages().send(userId="me",body=create_message(sender,destination, obj, body,html)
-    ).execute()
 
 parsed_response = parse_response(generate_news())
 print(parsed_response)
 email_body = generate_html(parsed_response)
 print(email_body)
 
-send_message(service, "News Reporter Agent <mumunisigli@gmail.com>", "mumunisigli@gmail.com,shellyann.murphy@yahoo.com", briefing_time(), 
-            "test", email_body)
 
-#maxwell.edusei@gmail.com
-#,shellyann.murphy@yahoo.com,nigel@ianaitch.com
+send_email(service, "News Reporter Agent <mumunisigli@gmail.com>", "mumunisigli@gmail.com",email_subject(),"test",email_body)
 
 
