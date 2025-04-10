@@ -3,10 +3,10 @@ from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 
+# for encoding the email message
 from base64 import urlsafe_b64encode
-# for dealing with attachment MIME types
+# for creating the email message
 from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 
 
 import os
@@ -16,7 +16,7 @@ from pytz import timezone
 
 # Request all access (permission to read/send/receive emails, manage the inbox, and more)
 SCOPES = ['https://mail.google.com/']
-our_email = 'mumunisigli@gmail.com'
+# If modifying these SCOPES, delete the file token.pickle.
 
 def gmail_authenticate():
     credentials = None
@@ -37,6 +37,7 @@ def gmail_authenticate():
             pickle.dump(credentials, token)
     return build('gmail', 'v1', credentials=credentials)
 
+# Function to determine the email subject based on the user's timezone
 def email_subject(user_timezone):
     hour = datetime.now(tz=timezone(user_timezone)).hour
     if hour <12:
@@ -50,9 +51,19 @@ def email_subject(user_timezone):
     else:
         return "News Briefing"
 
-
+# Function to create the email message
 def create_email(sender, destination, subject, html_message):
+    """_summary_
 
+    Args:
+        sender (str):_sender_
+        destination (str): _recipient_
+        subject (str): _subject_
+        html_message (html): _email body_
+
+    Returns:
+        html_message (bytes): _encoded email message_
+    """
     message = (MIMEText(html_message, 'html'))
     message['to'] = destination
     message['from'] = sender
@@ -60,6 +71,7 @@ def create_email(sender, destination, subject, html_message):
 
     return {'raw': urlsafe_b64encode(message.as_bytes()).decode()}
 
+# Function to send the email
 def send_email(service, sender,destination,subject,html):
     return service.users().messages().send(userId="me",body=create_email(sender,destination,subject,html)
     ).execute()

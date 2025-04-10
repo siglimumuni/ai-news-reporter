@@ -14,5 +14,3 @@ print(email_body)
 
 
 send_email(service, GMAIL_SENDER_EMAIL, RECIPIENT_EMAILS, EMAIL_SUBJECT,email_body)
-
-#send_email(service, "News Reporter Agent <mumunisigli@gmail.com>", "mumunisigli@gmail.com",email_subject(),"test",email_body)
