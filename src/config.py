@@ -1,41 +1,44 @@
 import os
 import logging
 from dotenv import load_dotenv
+from src.gmail_service import email_subject
 
 # Load environment variables from .env file for local development
 # In GCP Cloud Functions, set these environment variables directly
 load_dotenv()
 
-#logger = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 # --- Core Configuration ---
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-#if not GEMINI_API_KEY:
-    #logger.warning("GEMINI_API_KEY environment variable not set.")
-    # In a real app, you might raise an exception or handle this more gracefully
+if not GEMINI_API_KEY:
+    logger.warning("GEMINI_API_KEY environment variable not set.")
+    
 
 # Specify preferred models (could be made configurable)
 GEMINI_GENERATION_MODEL = "gemini-2.0-flash" #"gemini-2.5-pro-exp-03-25" # # 
 #GEMINI_PARSING_MODEL = "gemini-1.5-flash-latest" # Or use the same model if efficient
 
 # --- Email Configuration ---
-#GMAIL_SENDER_EMAIL = os.getenv("GMAIL_SENDER_EMAIL", "default_sender@example.com")
+GMAIL_SENDER_EMAIL = os.getenv("GMAIL_SENDER_EMAIL")
 # List of recipient emails, comma-separated in the environment variable
-#RECIPIENT_EMAILS_STR = os.getenv("RECIPIENT_EMAILS", "default_recipient@example.com")
-#RECIPIENT_EMAILS = [email.strip() for email in RECIPIENT_EMAILS_STR.split(',') if email.strip()]
+RECIPIENT_EMAILS_STR = os.getenv("RECIPIENT_EMAILS")
+RECIPIENT_EMAILS = ",".join([email.strip() for email in RECIPIENT_EMAILS_STR.split(',') if email.strip()])
 
-#if not RECIPIENT_EMAILS:
-    #logger.warning("RECIPIENT_EMAILS environment variable not set or empty.")
+TIMEZONE = os.getenv("TIMEZONE", "America/New_York") # Default timezone
 
-# Path to the Service Account key file (needed if not using Application Default Credentials)
-# Set this environment variable if using a key file
-#GCP_SERVICE_ACCOUNT_FILE = os.getenv("GCP_SERVICE_ACCOUNT_FILE") # e.g., 'path/to/your/credentials.json'
+
+EMAIL_SUBJECT = email_subject(TIMEZONE)
+
+if not RECIPIENT_EMAILS:
+    logger.warning("RECIPIENT_EMAILS environment variable not set or empty.")
+
 
 # Gmail API Scopes
-#GMAIL_SCOPES = ['https://mail.google.com/']
+GMAIL_SCOPES = ['https://mail.google.com/']
 
 # --- Application Settings ---
-#TIMEZONE = os.getenv("TIMEZONE", "America/New_York") # Default timezone
+
 HTML_TEMPLATE_PATH = "templates/minimalist_professional.html"
 
 # --- Observability ---#
@@ -44,7 +47,9 @@ HTML_TEMPLATE_PATH = "templates/minimalist_professional.html"
 #GCP_PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT") # Often set automatically in GCP env
 
 # --- Logging ---
-#LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
+
+TIMEZONE = os.getenv("TIMEZONE", "America/New_York") # Default timezone
 
 
 # --- Validation (Optional but recommended) ---

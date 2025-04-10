@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 # Prepare Jinja2 environment once
 try:
     env = Environment(
-        loader=FileSystemLoader(searchpath="."), # Look relative to where script runs
+        loader=FileSystemLoader(searchpath="."), 
         autoescape=select_autoescape(['html', 'xml']),
         trim_blocks=True,  # Helps clean up whitespace
         lstrip_blocks=True # Helps clean up whitespace

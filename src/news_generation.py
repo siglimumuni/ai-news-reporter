@@ -2,7 +2,7 @@ import logging
 import json
 from google.genai import Client as GeminiClient
 from google.genai.types import Tool, GenerateContentConfig, GoogleSearch # Corrected import
-#from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 from google.api_core import exceptions as google_api_exceptions # Import Google API exceptions
 
 from src.config import GEMINI_API_KEY, GEMINI_GENERATION_MODEL
@@ -47,18 +47,18 @@ CRITICAL INSTRUCTIONS:
 
 # Configure retry mechanism for Gemini API calls
 # Retry on specific Google API transient errors and potentially others
-#retry_decorator = retry(
-    #stop=stop_after_attempt(3), # Retry 3 times
-    #wait=wait_exponential(multiplier=1, min=4, max=10), # Exponential backoff (4s, 8s)
-    #retry=(
-            #retry_if_exception_type(google_api_exceptions.ServiceUnavailable) |
-            #retry_if_exception_type(google_api_exceptions.ResourceExhausted) |
-            #retry_if_exception_type(google_api_exceptions.DeadlineExceeded)
-            #),
-    #before_sleep=lambda retry_state: logger.warning(f"Retrying Gemini API call after error: {retry_state.outcome.exception()} (Attempt {retry_state.attempt_number})")
-#)
+retry_decorator = retry(
+    stop=stop_after_attempt(3), # Retry 3 times
+    wait=wait_exponential(multiplier=1, min=4, max=10), # Exponential backoff (4s, 8s)
+    retry=(
+            retry_if_exception_type(google_api_exceptions.ServiceUnavailable) |
+            retry_if_exception_type(google_api_exceptions.ResourceExhausted) |
+            retry_if_exception_type(google_api_exceptions.DeadlineExceeded)
+            ),
+    before_sleep=lambda retry_state: logger.warning(f"Retrying Gemini API call after error: {retry_state.outcome.exception()} (Attempt {retry_state.attempt_number})")
+)
 
-#@retry_decorator
+@retry_decorator
 def generate_news_digest() -> NewsCollection:
     """
     Generates a news digest using the Gemini API with Google Search tool,

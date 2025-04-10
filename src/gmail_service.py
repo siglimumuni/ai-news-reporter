@@ -3,14 +3,11 @@ from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 
-from base64 import urlsafe_b64decode, urlsafe_b64encode
+from base64 import urlsafe_b64encode
 # for dealing with attachment MIME types
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from email.mime.image import MIMEImage
-from email.mime.audio import MIMEAudio
-from email.mime.base import MIMEBase
-from mimetypes import guess_type as guess_mime_type
+
 
 import os
 import pickle
@@ -40,8 +37,8 @@ def gmail_authenticate():
             pickle.dump(credentials, token)
     return build('gmail', 'v1', credentials=credentials)
 
-def email_subject():
-    hour = datetime.now(tz=timezone('US/Eastern')).hour
+def email_subject(user_timezone):
+    hour = datetime.now(tz=timezone(user_timezone)).hour
     if hour <12:
         return "Morning News Briefing"
     elif hour <=15:
@@ -54,29 +51,16 @@ def email_subject():
         return "News Briefing"
 
 
-def create_email(sender, destination, subject, message_text, html_message=None):
-    
-    #message = MIMEText(body)
-    #message['to'] = destination
-    #message['from'] = our_email
-    #message['subject'] = obj
-    #return {'raw': urlsafe_b64encode(message.as_bytes()).decode()}
+def create_email(sender, destination, subject, html_message):
 
-    message = MIMEMultipart('alternative') # Use 'alternative' to show either text or HTML
+    message = (MIMEText(html_message, 'html'))
     message['to'] = destination
     message['from'] = sender
     message['subject'] = subject
 
-    msg = MIMEText(message_text, 'plain')
-    message.attach(msg)
-
-    if html_message:
-        msg = MIMEText(html_message, 'html')
-        message.attach(msg)
-
     return {'raw': urlsafe_b64encode(message.as_bytes()).decode()}
 
-def send_email(service, sender,destination,subject,body,html):
-    return service.users().messages().send(userId="me",body=create_email(sender,destination,subject,body,html)
+def send_email(service, sender,destination,subject,html):
+    return service.users().messages().send(userId="me",body=create_email(sender,destination,subject,html)
     ).execute()
 

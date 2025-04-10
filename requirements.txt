@@ -6,3 +6,4 @@ google-auth-oauthlib
 jinja2
 google-genai
 pydantic
+tenacity
