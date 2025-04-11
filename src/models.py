@@ -1,8 +1,5 @@
 from pydantic import BaseModel, Field, field_validator
 from typing import List, Optional
-import logging
-
-logger = logging.getLogger(__name__)
 
 # --- Models ---
 # Define the models for the news articles and collections
@@ -18,11 +15,9 @@ class Article(BaseModel):
     @field_validator('source_link', mode='before')
     def check_source_link(cls, v):
         if isinstance(v, str) and not v.startswith(('http://', 'https://')):
-            logger.warning(f"Correcting invalid source link format: {v}")
             return None 
         # Handle cases where the LLM might return an empty string or non-URL value
         if not v:
-            logger.warning("Received empty source link.")
             return None
         return v
 

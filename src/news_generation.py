@@ -1,15 +1,12 @@
-import logging
 import json
 from google.genai import Client as GeminiClient
-from google.genai.types import Tool, GenerateContentConfig, GoogleSearch # Corrected import
+from google.genai.types import Tool, GenerateContentConfig, GoogleSearch 
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 from google.api_core import exceptions as google_api_exceptions # Import Google API exceptions
 
 from src.config import GEMINI_API_KEY, GEMINI_GENERATION_MODEL, GEMINI_PARSING_MODEL
 from src.models import NewsCollection
 
-
-logger = logging.getLogger(__name__)
 
 NEWS_GENERATION_PROMPT = """
 You are a highly experienced news editor AI. Your task is to compile a concise and informative news digest covering the most significant global events from the last 12-24 hours.
@@ -63,15 +60,11 @@ def generate_news_digest() -> NewsCollection:
         NewsCollection: A Pydantic model instance containing the categorized news.
 
     """
-    
-    logger.info(f"Initiating news generation using model: {GEMINI_GENERATION_MODEL}")
-
     # Initialize the Gemini client
     client = GeminiClient(api_key=GEMINI_API_KEY)
 
     # Define the Google Search tool
-    google_search_tool = Tool(google_search=GoogleSearch()) # Simplified usage
-
+    google_search_tool = Tool(google_search=GoogleSearch())
     # Configure generation settings
     # Requesting JSON output directly via response_mime_type and response_schema
     generation_config = GenerateContentConfig(

@@ -7,7 +7,6 @@ This project implements an AI-powered news reporter agent that automatically:
 4.  Sends the email to configured recipients via the Gmail API.
 
 
-
 ## Features
 
 *   **AI-Powered News Aggregation:** Uses Google Gemini (configurable model) with web search capabilities.
