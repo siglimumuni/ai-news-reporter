@@ -15,7 +15,7 @@ GEMINI_PARSING_MODEL = "gemini-2.0-flash" #"gemini-1.5-flash-latest"
 # --- Email Configuration ---
 GMAIL_SENDER_EMAIL = os.getenv("GMAIL_SENDER_EMAIL")
 # List of recipient emails, comma-separated in the environment variable
-RECIPIENT_EMAILS_STR = os.getenv("RECIPIENT_EMAILS")
+RECIPIENT_EMAILS_STR = os.getenv("RECIPIENT_EMAIL_LIST")
 RECIPIENT_EMAILS = ",".join([email.strip() for email in RECIPIENT_EMAILS_STR.split(',') if email.strip()])
 
 # Email subject based on the time zone

@@ -40,13 +40,13 @@ def gmail_authenticate():
 # Function to determine the email subject based on the user's timezone
 def email_subject(user_timezone):
     hour = datetime.now(tz=timezone(user_timezone)).hour
-    if hour <12:
+    if hour >=5 and hour < 12:
         return "Morning News Briefing"
-    elif hour <=15:
+    elif hour >=12 and hour < 16:
         return "Afternoon News Briefing"
-    elif hour <=20:
+    elif hour >=16 and hour < 20:
         return "Evening News Briefing"
-    elif hour <=23:
+    elif hour >=20 and hour < 24:
         return "Nightly News Briefing"
     else:
         return "News Briefing"
