@@ -19,7 +19,7 @@ RECIPIENT_EMAILS_STR = os.getenv("RECIPIENT_EMAIL_LIST")
 RECIPIENT_EMAILS = ",".join([email.strip() for email in RECIPIENT_EMAILS_STR.split(',') if email.strip()])
 
 # Email subject based on the time zone
-TIMEZONE = os.getenv("TIMEZONE", "America/New_York")
+TIMEZONE = os.getenv("TIMEZONE","UTC")  # Default to UTC if not set
 EMAIL_SUBJECT = email_subject(TIMEZONE)
 
 # --- HTML Template Configuration ---
