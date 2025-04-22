@@ -11,8 +11,6 @@ from email.mime.text import MIMEText
 
 import os
 import pickle
-from datetime import datetime
-from pytz import timezone
 
 # Request all access (permission to read/send/receive emails, manage the inbox, and more)
 SCOPES = ['https://mail.google.com/']
@@ -37,37 +35,6 @@ def gmail_authenticate():
             pickle.dump(credentials, token)
     return build('gmail', 'v1', credentials=credentials)
 
-# Function to determine the email subject based on the user's timezone
-def email_subject(user_timezone):
-    """
-    Determines email subject based on time of day using 24-hour format.
-    
-    Args:
-        user_timezone (str): Timezone string (e.g., 'America/New_York')
-    
-    Returns:
-        str: Appropriate subject line based on time:
-            05:00-11:59 -> Morning News
-            12:00-15:59 -> Afternoon News
-            16:00-19:59 -> Evening News
-            20:00-23:59 -> Nightly News
-            00:00-04:59 -> News Briefing
-    """
-    utc = datetime.now(timezone('UTC'))
-    now_local = utc.astimezone(timezone(user_timezone))
-    
-    hour_24 = now_local.hour  # 24-hour format (0-23)
-    
-    if 5 <= hour_24 < 12:
-        return "Morning News Briefing"
-    elif 12 <= hour_24 < 16:
-        return "Afternoon News Briefing"
-    elif 16 <= hour_24 < 20:
-        return "Evening News Briefing"
-    elif 20 <= hour_24 < 24:
-        return "Nightly News Briefing"
-    else:  # 0-4 hours
-        return "News Briefing"
 
 # Function to create the email message
 def create_email(sender, destination, subject, html_message):
